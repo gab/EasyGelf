@@ -5,7 +5,7 @@ namespace EasyGelf.Core
 {
     public sealed class GelfMessageBuilder
     {
-        private readonly Dictionary<string, string> additionalFields = new Dictionary<string, string>();
+        private readonly Dictionary<string, object> additionalFields = new Dictionary<string, object>();
         private readonly string message;
         private readonly string host;
         private readonly DateTime timestamp;
@@ -19,11 +19,11 @@ namespace EasyGelf.Core
             this.level = level;
         }
 
-        public GelfMessageBuilder SetAdditionalField(string key, string value)
+        public GelfMessageBuilder SetAdditionalField(string key, object value)
         {
             if (string.IsNullOrEmpty(key))
                 return this;
-            if (string.IsNullOrEmpty(value))
+            if (value == null)
                 return this;
             additionalFields.Add(key, value);
             return this;

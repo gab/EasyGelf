@@ -49,6 +49,10 @@ namespace EasyGelf.Tests.Core
                 .SetAdditionalField(GelfAdditionalFields.SourceLineNumber, "sourceLineNumber")
                 .SetAdditionalField(GelfAdditionalFields.SourceClassName, "sourceClassName")
                 .SetAdditionalField(GelfAdditionalFields.SourceMethodName, "sourceMethodName")
+                .SetAdditionalField("someStringValue", "someStringValue")
+                .SetAdditionalField("someInt32Value", 32)
+                .SetAdditionalField("someInt64Value", 64)
+                .SetAdditionalField("someDecimalValue", 1.1111)
                 .ToMessage();
 
             var serializedMessage = Encoding.UTF8.GetString(serializer.Serialize(message));
@@ -64,7 +68,11 @@ namespace EasyGelf.Tests.Core
                             "\"_sourceFileName\":\"sourceFileName\"," +
                             "\"_sourceLineNumber\":\"sourceLineNumber\"," +
                             "\"_sourceClassName\":\"sourceClassName\"," +
-                            "\"_sourceMethodName\":\"sourceMethodName\"}", serializedMessage);
+                            "\"_sourceMethodName\":\"sourceMethodName\"," +
+                            "\"_someStringValue\":\"someStringValue\"," +
+                            "\"_someInt32Value\":32," +
+                            "\"_someInt64Value\":64," +
+                            "\"_someDecimalValue\":1.1111}", serializedMessage);
         }
     }
 }

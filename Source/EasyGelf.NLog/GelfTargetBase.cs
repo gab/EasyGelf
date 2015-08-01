@@ -7,7 +7,6 @@ using NLog.Targets;
 using NLog.Config;
 using NLog.Layouts;
 using System.Collections.Generic;
-using System.ComponentModel;
 
 namespace EasyGelf.NLog
 {
@@ -22,8 +21,8 @@ namespace EasyGelf.NLog
 
         public bool IncludeSource { get; set; }
 
-		public bool IncludeEventProperties { get; set; }
-       
+        public bool IncludeEventProperties { get; set; }
+
         public bool UseRetry { get; set; }
 
         public int RetryCount { get; set; }
@@ -34,22 +33,22 @@ namespace EasyGelf.NLog
 
         public bool Verbose { get; set; }
 
-		[ArrayParameter(typeof(GelfParameterInfo), "parameter")]
-		public IList<GelfParameterInfo> Parameters { get; private set; }
+        [ArrayParameter(typeof(GelfParameterInfo), "parameter")]
+        public IList<GelfParameterInfo> Parameters { get; private set; }
 
         protected GelfTargetBase()
         {
             Facility = "gelf";
             HostName = Environment.MachineName;
             IncludeSource = true;
-			IncludeEventProperties = true;
+            IncludeEventProperties = true;
             UseRetry = true;
             RetryCount = 5;
             RetryDelay = TimeSpan.FromMilliseconds(50);
             IncludeStackTrace = true;
             Verbose = false;
 
-			Parameters = new List<GelfParameterInfo>();
+            Parameters = new List<GelfParameterInfo>();
         }
 
         protected abstract ITransport InitializeTransport(IEasyGelfLogger logger);
@@ -81,25 +80,47 @@ namespace EasyGelf.NLog
                     }
                 }
 
-				//Add user-defined fields from config
-				foreach (GelfParameterInfo param in Parameters)
-				{
-					var value = param.Layout.Render(loggingEvent);
-					if (value == "" || value == " ")
-						continue;
-					var key = param.Name;
+                //Add user-defined fields from config
+                foreach (GelfParameterInfo param in Parameters)
+                {
+                    var value = param.Layout.Render(loggingEvent);
+                    if (string.IsNullOrWhiteSpace(value))
+                        continue;
+                    var key = param.Name;
 
-					messageBuilder.SetAdditionalField(key, value);
-				}
+                    long longValue;
+                    decimal decimalValue;
+                    bool boolValue;
 
-				//Add log event properties
-				if(IncludeEventProperties)
-				{
-					foreach(var property in loggingEvent.Properties)
-					{
-						messageBuilder.SetAdditionalField(property.Key.ToString(), property.Value.ToString());
-					}
-				}
+                    if (param.Type == GelfParameterInfoType.Boolean
+                        && BooleanTryParse(value, out boolValue))
+                    {
+                        messageBuilder.SetAdditionalField(key, boolValue);
+                    }
+                    else if (param.Type == GelfParameterInfoType.Integer
+                        && long.TryParse(value, out longValue))
+                    {
+                        messageBuilder.SetAdditionalField(key, longValue);
+                    }
+                    else if (param.Type == GelfParameterInfoType.Decimal
+                        && decimal.TryParse(value, out decimalValue))
+                    {
+                        messageBuilder.SetAdditionalField(key, decimalValue);
+                    }
+                    else
+                    {
+                        messageBuilder.SetAdditionalField(key, value);
+                    }
+                }
+
+                //Add log event properties
+                if (IncludeEventProperties)
+                {
+                    foreach (var property in loggingEvent.Properties)
+                    {
+                        messageBuilder.SetAdditionalField(property.Key.ToString(), property.Value.ToString());
+                    }
+                }
 
                 transport.Send(messageBuilder.ToMessage());
             }
@@ -140,14 +161,69 @@ namespace EasyGelf.NLog
             return level == LogLevel.Warn ? GelfLevel.Warning : GelfLevel.Error;
         }
 
-		[NLogConfigurationItem]
-		public class GelfParameterInfo
-		{
-			[RequiredParameter]
-			public string Name { get; set; }
+        private static bool BooleanTryParse(string value, out bool boolValue)
+        {
+            if (value == "0" || value.Equals(bool.FalseString, StringComparison.InvariantCultureIgnoreCase))
+            {
+                boolValue = false;
+                return true;
+            }
+            if (value == "1" || value.Equals(bool.TrueString, StringComparison.InvariantCultureIgnoreCase))
+            {
+                boolValue = true;
+                return true;
+            }
+            boolValue = false;
+            return false;
+        }
 
-			[RequiredParameter]
-			public Layout Layout { get; set; }
-		}
+        [NLogConfigurationItem]
+        public class GelfParameterInfo
+        {
+            [RequiredParameter]
+            public string Name { get; set; }
+
+            [RequiredParameter]
+            public Layout Layout { get; set; }
+
+            /// <summary>
+            /// Convert the value to the specified type: String (default), Integer, Decimal.
+            /// </summary>
+            public string LayoutType
+            {
+                get { return Type.ToString(); }
+                set
+                {
+                    switch (value.ToLowerInvariant())
+                    {
+                        case "bool":
+                        case "boolean":
+                            Type = GelfParameterInfoType.Boolean;
+                            break;
+                        case "int":
+                        case "integer":
+                            Type = GelfParameterInfoType.Integer;
+                            break;
+                        case "numeric":
+                        case "decimal":
+                            Type = GelfParameterInfoType.Decimal;
+                            break;
+                        default:
+                            Type = GelfParameterInfoType.String;
+                            break;
+                    }
+                }
+            }
+
+            public GelfParameterInfoType Type { get; private set; }
+        }
+
+        public enum GelfParameterInfoType
+        {
+            String,
+            Boolean,
+            Integer,
+            Decimal
+        }
     }
 }
