@@ -18,7 +18,7 @@ namespace EasyGelf.Tests.Core.Transport
 
         [SetUp]
         public void SetUp()
-        {              
+        {
             mockRepository = new MockRepository();
             mainTransport = mockRepository.StrictMultiMock<ITransport>();
             mainTransport.Replay();
@@ -47,7 +47,7 @@ namespace EasyGelf.Tests.Core.Transport
         public void ShouldFailIfAllAttemptsFailed()
         {
             var message = new GelfMessage();
-            for(var i = 0; i < retryCount; ++i)
+            for (var i = 0; i < retryCount; ++i)
                 mainTransport.Expect(x => x.Send(message)).Throw(new Exception());
             retryingTransport.Send(message);
         }

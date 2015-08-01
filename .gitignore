@@ -17,6 +17,12 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
 # =========================
 # Operating System Files
 # =========================

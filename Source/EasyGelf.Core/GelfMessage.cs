@@ -7,7 +7,7 @@ namespace EasyGelf.Core
     {
         public GelfMessage()
         {
-            AdditionalFields = new Dictionary<string, string>();
+            AdditionalFields = new Dictionary<string, object>();
         }
 
         public string Version { get { return "1.1"; } }
@@ -16,6 +16,6 @@ namespace EasyGelf.Core
         public string FullMessage { get; set; }
         public DateTime Timestamp { get; set; }
         public GelfLevel Level { get; set; }
-        public Dictionary<string, string> AdditionalFields { get; set; }
+        public Dictionary<string, object> AdditionalFields { get; set; }
     }
 }
